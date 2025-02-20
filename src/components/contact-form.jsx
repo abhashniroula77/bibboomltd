@@ -19,11 +19,11 @@ export function ContactForm() {
         const formData = new FormData(event.target);
 
         // ✅ Required: Web3Forms Access Key
-        formData.append("access_key", "f246ffb6-4ca4-48d8-a1ef-a126162c9208");
+        formData.append("access_key", "3ea2acd8-5e4c-4d4b-a776-95b7b4dd51ab");
 
         // ✅ Hidden Fields to Ensure Proper Delivery
         formData.append("from_name", "BitBoom Ltd");
-        formData.append("from_email", "info@bitboomlimited.co.uk");
+        formData.append("from_email", "niroulaabhash787@gmail.com");
 
         // ✅ Collect selected services
         const services = [];
