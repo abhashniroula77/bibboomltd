@@ -1,13 +1,14 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion';
-import { X, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
-import { useModal } from '@/context/modalContext';
+import { motion } from "framer-motion";
+import { X, CheckCircle, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { useModal } from "@/context/modalContext";
 
 export function ContactForm() {
     const { isModalOpen, setIsModalOpen } = useModal();
     const [showSuccess, setShowSuccess] = useState(false);
+    const [showError, setShowError] = useState(false);
 
     const handleClose = () => {
         setIsModalOpen(false);
@@ -17,36 +18,45 @@ export function ContactForm() {
         event.preventDefault();
         const formData = new FormData(event.target);
 
+        // ✅ Required: Web3Forms Access Key
         formData.append("access_key", "f246ffb6-4ca4-48d8-a1ef-a126162c9208");
 
+        // ✅ Hidden Fields to Ensure Proper Delivery
+        formData.append("from_name", "BitBoom Ltd");
+        formData.append("from_email", "info@bitboomlimited.co.uk");
+
+        // ✅ Collect selected services
         const services = [];
         formData.forEach((value, key) => {
-            if (key === 'checkbox') {
-                services.push(value);
+            if (key === "checkbox") services.push(value);
+        });
+        formData.set("services", services.join(", "));
+
+        const json = JSON.stringify(Object.fromEntries(formData));
+
+        try {
+            const response = await fetch("https://api.web3forms.com/submit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: json,
+            });
+
+            const result = await response.json();
+            console.log("Web3Forms Response:", result);
+
+            if (result.success) {
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    setIsModalOpen(false);
+                }, 3000);
+            } else {
+                throw new Error(result.message);
             }
-        });
-
-        const object = Object.fromEntries(formData);
-        object.services = services;
-
-        const json = JSON.stringify(object);
-
-        const response = await fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json"
-            },
-            body: json
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            setShowSuccess(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-                setIsModalOpen(false);
-            }, 3000);
+        } catch (error) {
+            console.error("Web3Forms Error:", error);
+            setShowError(true);
+            setTimeout(() => setShowError(false), 3000);
         }
     }
 
@@ -85,18 +95,21 @@ export function ContactForm() {
                             type="text"
                             name="name"
                             placeholder="Your Name"
+                            required
                             className="w-full px-4 py-3 border rounded-md border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         />
                         <input
                             type="email"
                             name="email"
                             placeholder="you@company.com"
+                            required
                             className="w-full px-4 py-3 border rounded-md border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         />
                         <textarea
                             name="message"
                             placeholder="Tell us about your project..."
                             rows={4}
+                            required
                             className="w-full px-4 py-3 border rounded-md border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         />
 
@@ -127,7 +140,8 @@ export function ContactForm() {
                         </div>
                     </form>
                 </div>
-                
+
+                {/* ✅ Success Message */}
                 {showSuccess && (
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
@@ -137,6 +151,19 @@ export function ContactForm() {
                     >
                         <CheckCircle className="w-6 h-6" />
                         <span>Message sent successfully!</span>
+                    </motion.div>
+                )}
+
+                {/* ❌ Error Message */}
+                {showError && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-md flex items-center space-x-2"
+                    >
+                        <AlertCircle className="w-6 h-6" />
+                        <span>Oops! Something went wrong. Try again.</span>
                     </motion.div>
                 )}
             </motion.div>
